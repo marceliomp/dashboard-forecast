@@ -138,7 +138,7 @@ export default function DashboardForecast() {
     }
   }, [dateFilter, dateType, customStartDate, customEndDate, selectedUser, isAdmin]);
 
-  const handleLogin = async () => {
+const handleLogin = async () => {
   if (!loginEmail) {
     alert('Digite seu email');
     return;
@@ -202,8 +202,8 @@ export default function DashboardForecast() {
     console.error('Erro ao fazer login:', error);
     setLoading(false);
     alert('Erro ao conectar. Tente novamente.');
-    }
-  };
+  }
+};
     setUser(foundUser);
     await fetchDeals();
   };
