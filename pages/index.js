@@ -31,7 +31,7 @@ export default function DashboardForecast() {
     green: '#28a745'
   };
 
- const stageMap = {
+  const stageMap = {
     'UC_1QZ0O9': { name: 'Hora do Ouro', probability: 0, order: 1, color: '#b3e5fc' },
     'UC_JGHE6A': { name: 'NoShow', probability: 3, order: 2, color: '#ef9a9a' },
     'UC_J1PXFX': { name: 'Nutrição Ativa', probability: 15, order: 3, color: '#80deea' },
@@ -64,18 +64,6 @@ export default function DashboardForecast() {
     const now = new Date();
     const lastDate = new Date(lastActivity);
     return Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch(`/api/bitrix?endpoint=user.get`);
-      const data = await response.json();
-      if (data.result) {
-        setUsers(data.result);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
-    }
   };
 
   const fetchDeals = async () => {
@@ -138,74 +126,71 @@ export default function DashboardForecast() {
     }
   }, [dateFilter, dateType, customStartDate, customEndDate, selectedUser, isAdmin]);
 
-const handleLogin = async () => {
-  if (!loginEmail) {
-    alert('Digite seu email');
-    return;
-  }
-  
-  setLoading(true);
-  
-  try {
-    // Buscar usuários do Bitrix24
-    const response = await fetch(`/api/bitrix?endpoint=user.get`);
-    const data = await response.json();
-    
-    if (!data.result) {
-      alert('Erro ao conectar com o Bitrix24');
-      setLoading(false);
+  const handleLogin = async () => {
+    if (!loginEmail) {
+      alert('Digite seu email');
       return;
     }
     
-    setUsers(data.result);
+    setLoading(true);
     
-    // Emails dos gestores (ALTERE AQUI COM OS EMAILS REAIS)
-    const adminEmails = ['admin@alvo.com', 'gerente@alvo.com'];
-    const isUserAdmin = adminEmails.includes(loginEmail.toLowerCase());
-    
-    if (isUserAdmin) {
-      // Login como Admin
-      setIsAdmin(true);
-      const foundUser = { 
-        id: 'admin', 
-        name: 'Administrador',
-        email: loginEmail 
-      };
-      setUser(foundUser);
-      await fetchDeals();
+    try {
+      // Buscar usuários do Bitrix24
+      const response = await fetch(`/api/bitrix?endpoint=user.get`);
+      const data = await response.json();
+      
+      if (!data.result) {
+        alert('Erro ao conectar com o Bitrix24');
+        setLoading(false);
+        return;
+      }
+      
+      setUsers(data.result);
+      
+      // Emails dos gestores (ALTERE AQUI COM OS EMAILS REAIS DOS GESTORES)
+      const adminEmails = ['admin@alvo.com', 'gerente@alvo.com'];
+      const isUserAdmin = adminEmails.includes(loginEmail.toLowerCase());
+      
+      if (isUserAdmin) {
+        // Login como Admin
+        setIsAdmin(true);
+        const foundUser = { 
+          id: 'admin', 
+          name: 'Administrador',
+          email: loginEmail 
+        };
+        setUser(foundUser);
+        await fetchDeals();
+        setLoading(false);
+        return;
+      }
+      
+      // Procurar corretor no Bitrix24
+      const bitrixUser = data.result.find(u => 
+        u.EMAIL && u.EMAIL.toLowerCase() === loginEmail.toLowerCase()
+      );
+      
+      if (bitrixUser) {
+        // Corretor encontrado
+        setIsAdmin(false);
+        const foundUser = { 
+          id: bitrixUser.ID, 
+          name: bitrixUser.NAME || bitrixUser.LAST_NAME || 'Corretor',
+          email: loginEmail 
+        };
+        setUser(foundUser);
+        await fetchDeals();
+        setLoading(false);
+      } else {
+        // Email não encontrado
+        setLoading(false);
+        alert('❌ Email não encontrado no sistema.\n\nApenas corretores cadastrados ou gestores podem acessar.');
+      }
+    } catch (error) {
+      console.error('Erro ao fazer login:', error);
       setLoading(false);
-      return;
+      alert('Erro ao conectar. Tente novamente.');
     }
-    
-    // Procurar corretor no Bitrix24
-    const bitrixUser = data.result.find(u => 
-      u.EMAIL && u.EMAIL.toLowerCase() === loginEmail.toLowerCase()
-    );
-    
-    if (bitrixUser) {
-      // Corretor encontrado
-      setIsAdmin(false);
-      const foundUser = { 
-        id: bitrixUser.ID, 
-        name: bitrixUser.NAME || bitrixUser.LAST_NAME || 'Corretor',
-        email: loginEmail 
-      };
-      setUser(foundUser);
-      await fetchDeals();
-      setLoading(false);
-    } else {
-      // Email não encontrado
-      setLoading(false);
-      alert('❌ Email não encontrado no sistema.\n\nApenas corretores cadastrados ou gestores podem acessar.');
-    }
-  } catch (error) {
-    console.error('Erro ao fazer login:', error);
-    setLoading(false);
-    alert('Erro ao conectar. Tente novamente.');
-  }
-};
-    setUser(foundUser);
-    await fetchDeals();
   };
 
   const handleLogout = () => {
@@ -235,7 +220,6 @@ const handleLogin = async () => {
     return { totalDeals, totalValue, wonDeals, lostDeals, weightedValue, conversionRate, activeDeals: activeDeals.length };
   };
 
-  // Ações prioritárias agrupadas por corretor
   const getPriorityActionsByUser = () => {
     const byUser = {};
 
@@ -380,7 +364,7 @@ const handleLogin = async () => {
           
           <input
             type="email"
-            placeholder="Seu email"
+            placeholder="Seu email cadastrado no Bitrix24"
             value={loginEmail}
             onChange={(e) => setLoginEmail(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
@@ -396,22 +380,22 @@ const handleLogin = async () => {
             }}
           />
           
-          <button onClick={handleLogin} style={{
+          <button onClick={handleLogin} disabled={loading} style={{
             width: '100%',
             padding: '12px',
-            background: colors.primary,
+            background: loading ? '#ccc' : colors.primary,
             color: colors.light,
             border: 'none',
             borderRadius: '8px',
             fontSize: '16px',
             fontWeight: 'bold',
-            cursor: 'pointer'
+            cursor: loading ? 'not-allowed' : 'pointer'
           }}>
-            Entrar
+            {loading ? 'Validando...' : 'Entrar'}
           </button>
           
           <p style={{ fontSize: '12px', color: '#999', marginTop: '20px', textAlign: 'center' }}>
-            💡 Use admin@alvo.com para visão gerencial
+            🔒 Apenas corretores cadastrados podem acessar
           </p>
         </div>
       </div>
@@ -451,7 +435,6 @@ const handleLogin = async () => {
         </button>
       </header>
 
-      {/* TABS COM BOTÕES ARREDONDADOS */}
       <div style={{ background: colors.light, borderBottom: `2px solid ${colors.gray}`, padding: '15px 30px' }}>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {[
@@ -490,7 +473,6 @@ const handleLogin = async () => {
           </div>
         ) : (
           <>
-            {/* FILTROS */}
             <div style={{
               background: colors.light,
               padding: '20px',
@@ -581,7 +563,6 @@ const handleLogin = async () => {
               </div>
             </div>
 
-            {/* VISÃO GERAL */}
             {activeTab === 'overview' && (
               <>
                 <div style={{ 
@@ -630,7 +611,6 @@ const handleLogin = async () => {
               </>
             )}
 
-            {/* AÇÕES PRIORITÁRIAS AGRUPADAS POR CORRETOR */}
             {activeTab === 'actions' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
                 <div style={{ marginBottom: '20px', textAlign: 'right' }}>
@@ -681,7 +661,7 @@ const handleLogin = async () => {
                             🔥 Quentes ({userData.hot.length})
                           </h4>
                           {(showAllActions ? userData.hot : userData.hot.slice(0, 3)).map(deal => (
-                            <DealRow key={deal.ID} deal={deal} users={users} stageInfo={getStageInfo(deal.STAGE_ID)} type="hot" />
+                            <DealRow key={deal.ID} deal={deal} users={<DealRow key={deal.ID} deal={deal} users={users} stageInfo={getStageInfo(deal.STAGE_ID)} type="hot" />
                           ))}
                         </div>
                       )}
@@ -710,7 +690,6 @@ const handleLogin = async () => {
               </div>
             )}
 
-            {/* PERFORMANCE */}
             {activeTab === 'performance' && (
               <div style={{ background: colors.light, padding: '25px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                 <h3 style={{ marginBottom: '20px', color: colors.dark }}>🎯 Ranking de Corretores</h3>
@@ -721,7 +700,6 @@ const handleLogin = async () => {
               </div>
             )}
 
-            {/* DEALS EM ANDAMENTO */}
             {activeTab === 'active' && (
               <div style={{ background: colors.light, padding: '25px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                 <h3 style={{ marginBottom: '20px', color: colors.dark }}>
@@ -740,7 +718,6 @@ const handleLogin = async () => {
               </div>
             )}
 
-            {/* DEALS PERDIDOS */}
             {activeTab === 'lost' && (
               <div style={{ background: colors.light, padding: '25px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                 <h3 style={{ marginBottom: '20px', color: colors.dark }}>
@@ -764,8 +741,6 @@ const handleLogin = async () => {
     </div>
   );
 }
-
-// COMPONENTES
 
 const StatCard = ({ title, value, color, icon }) => (
   <div style={{
