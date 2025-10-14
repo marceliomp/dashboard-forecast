@@ -138,7 +138,7 @@ export default function DashboardForecast() {
     }
   }, [dateFilter, dateType, customStartDate, customEndDate, selectedUser, isAdmin]);
 
-  const handleLogin = async () => {const handleLogin = async () => {
+  const handleLogin = async () => {
   if (!loginEmail) {
     alert('Digite seu email');
     return;
@@ -146,58 +146,62 @@ export default function DashboardForecast() {
   
   setLoading(true);
   
-  // Buscar usuários primeiro
-  await fetchUsers();
-  
-  // Verificar se é admin
-  const adminEmails = ['admin@alvo.com', 'gerente@alvo.com', 'seu-email@alvo.com']; // ADICIONE EMAILS DE GESTORES AQUI
-  const isUserAdmin = adminEmails.includes(loginEmail.toLowerCase());
-  
-  if (isUserAdmin) {
-    // Admin pode entrar
-    setIsAdmin(true);
-    const foundUser = { 
-      id: 'admin', 
-      name: 'Administrador',
-      email: loginEmail 
-    };
-    setUser(foundUser);
-    await fetchDeals();
-    setLoading(false);
-    return;
-  }
-  
-  // Buscar usuário no Bitrix24
   try {
+    // Buscar usuários do Bitrix24
     const response = await fetch(`/api/bitrix?endpoint=user.get`);
     const data = await response.json();
     
-    if (data.result) {
-      const bitrixUser = data.result.find(u => 
-        u.EMAIL && u.EMAIL.toLowerCase() === loginEmail.toLowerCase()
-      );
-      
-      if (bitrixUser) {
-        // Usuário encontrado no Bitrix24
-        setIsAdmin(false);
-        const foundUser = { 
-          id: bitrixUser.ID, 
-          name: bitrixUser.NAME || bitrixUser.LAST_NAME || 'Corretor',
-          email: loginEmail 
-        };
-        setUser(foundUser);
-        await fetchDeals();
-        setLoading(false);
-      } else {
-        // Email não encontrado
-        setLoading(false);
-        alert('❌ Email não encontrado no sistema. Entre em contato com o administrador.');
-      }
+    if (!data.result) {
+      alert('Erro ao conectar com o Bitrix24');
+      setLoading(false);
+      return;
+    }
+    
+    setUsers(data.result);
+    
+    // Emails dos gestores (ALTERE AQUI COM OS EMAILS REAIS)
+    const adminEmails = ['admin@alvo.com', 'gerente@alvo.com'];
+    const isUserAdmin = adminEmails.includes(loginEmail.toLowerCase());
+    
+    if (isUserAdmin) {
+      // Login como Admin
+      setIsAdmin(true);
+      const foundUser = { 
+        id: 'admin', 
+        name: 'Administrador',
+        email: loginEmail 
+      };
+      setUser(foundUser);
+      await fetchDeals();
+      setLoading(false);
+      return;
+    }
+    
+    // Procurar corretor no Bitrix24
+    const bitrixUser = data.result.find(u => 
+      u.EMAIL && u.EMAIL.toLowerCase() === loginEmail.toLowerCase()
+    );
+    
+    if (bitrixUser) {
+      // Corretor encontrado
+      setIsAdmin(false);
+      const foundUser = { 
+        id: bitrixUser.ID, 
+        name: bitrixUser.NAME || bitrixUser.LAST_NAME || 'Corretor',
+        email: loginEmail 
+      };
+      setUser(foundUser);
+      await fetchDeals();
+      setLoading(false);
+    } else {
+      // Email não encontrado
+      setLoading(false);
+      alert('❌ Email não encontrado no sistema.\n\nApenas corretores cadastrados ou gestores podem acessar.');
     }
   } catch (error) {
-    console.error('Erro ao validar usuário:', error);
+    console.error('Erro ao fazer login:', error);
     setLoading(false);
-    alert('Erro ao conectar com o sistema. Tente novamente.');
+    alert('Erro ao conectar. Tente novamente.');
   }
 };
     setUser(foundUser);
