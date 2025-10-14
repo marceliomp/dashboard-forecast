@@ -1,27 +1,13 @@
 diff --git a/src/components/DashboardForecast.jsx b/src/components/DashboardForecast.jsx
 new file mode 100644
-index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a392cb724
+index 0000000000000000000000000000000000000000..b4bb1696684f3f4bcf9055dfe4a3fd9515ac585e
 --- /dev/null
 +++ b/src/components/DashboardForecast.jsx
-@@ -0,0 +1,1258 @@
+@@ -0,0 +1,1046 @@
 +import React, { useState, useEffect } from 'react';
-+import {
-+  BarChart,
-+  Bar,
-+  XAxis,
-+  YAxis,
-+  CartesianGrid,
-+  Tooltip,
-+  Legend,
-+  ResponsiveContainer
-+} from 'recharts';
++import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 +
 +const BITRIX_WEBHOOK = 'https://alvo.bitrix24.com.br/rest/1/8notqwwad2r87739/';
-+
-+const ADMIN_EMAILS = [
-+  'admin@alvo.com',
-+  'gerente@alvo.com'
-+].map((email) => email.toLowerCase());
 +
 +export default function DashboardForecast() {
 +  const [user, setUser] = useState(null);
@@ -30,9 +16,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +  const [users, setUsers] = useState([]);
 +  const [loading, setLoading] = useState(false);
 +  const [loginEmail, setLoginEmail] = useState('');
-+  const [isAdmin, setIsAdmin] = useState(false);
 +  const [activeTab, setActiveTab] = useState('overview');
-+  const [selectedUser, setSelectedUser] = useState('all');
 +  const [showAllActions, setShowAllActions] = useState(false);
 +
 +  const [dateFilter, setDateFilter] = useState('all');
@@ -55,21 +39,15 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +    'UC_1QZ0O9': { name: 'Hora do Ouro', probability: 0, order: 1, color: '#b3e5fc' },
 +    'UC_JGHE6A': { name: 'NoShow', probability: 3, order: 2, color: '#ef9a9a' },
 +    'UC_J1PXFX': { name: 'Nutrição Ativa', probability: 15, order: 3, color: '#80deea' },
-+    NEW: { name: 'Reunião Prevista', probability: 25, order: 4, color: '#42a5f5' },
-+    PREPARATION: { name: 'Show', probability: 40, order: 5, color: '#1e88e5' },
-+    'C1:PREPARATION': { name: 'Show', probability: 40, order: 5, color: '#1e88e5' },
-+    UC_SI76GS: { name: 'Follow-Up', probability: 50, order: 6, color: '#ffeb3b' },
-+    PREPAYMENT_INVOICE: { name: 'Em Negociação', probability: 60, order: 7, color: '#ab47bc' },
-+    FINAL_INVOICE: {
-+      name: 'Proposta Formalizada / Reserva',
-+      probability: 75,
-+      order: 8,
-+      color: '#ffa726'
-+    },
-+    WON: { name: 'Negócios Fechados', probability: 100, order: 9, color: '#7bd500' },
++    'NEW': { name: 'Reunião Prevista', probability: 25, order: 4, color: '#42a5f5' },
++    'PREPARATION': { name: 'Show', probability: 40, order: 5, color: '#1e88e5' },
++    'UC_SI76GS': { name: 'Follow-Up', probability: 50, order: 6, color: '#ffeb3b' },
++    'PREPAYMENT_INVOICE': { name: 'Em Negociação', probability: 60, order: 7, color: '#ab47bc' },
++    'FINAL_INVOICE': { name: 'Proposta Formalizada / Reserva', probability: 75, order: 8, color: '#ffa726' },
++    'WON': { name: 'Negócios Fechados', probability: 100, order: 9, color: '#7bd500' },
 +    'C1:WON': { name: 'Negócios Fechados', probability: 100, order: 9, color: '#7bd500' },
-+    LOSE: { name: 'Negócios Perdido', probability: 0, order: 10, color: '#ff5752' },
-+    UC_ZB34M4: { name: 'Cliente não aceito (sem perfil)', probability: 0, order: 11, color: '#ef3000' }
++    'LOSE': { name: 'Negócios Perdido', probability: 0, order: 10, color: '#ff5752' },
++    'UC_ZB34M4': { name: 'Cliente não aceito (sem perfil)', probability: 0, order: 11, color: '#ef3000' }
 +  };
 +
 +  const getStageInfo = (stageId) => {
@@ -99,7 +77,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +      const data = await response.json();
 +
 +      if (data.result && data.result.length > 0) {
-+        const salesDeals = data.result.filter((deal) => deal.CATEGORY_ID === '0');
++        const salesDeals = data.result.filter(deal => deal.CATEGORY_ID === '0');
 +        setAllDeals(salesDeals);
 +        applyFilters(salesDeals);
 +      }
@@ -112,10 +90,8 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +  const applyFilters = (dealsData) => {
 +    let filtered = dealsData;
 +
-+    if (!isAdmin && user) {
-+      filtered = filtered.filter((deal) => deal.ASSIGNED_BY_ID === user.id);
-+    } else if (isAdmin && selectedUser !== 'all') {
-+      filtered = filtered.filter((deal) => deal.ASSIGNED_BY_ID === selectedUser);
++    if (user) {
++      filtered = filtered.filter(deal => String(deal.ASSIGNED_BY_ID) === String(user.id));
 +    }
 +
 +    const now = new Date();
@@ -123,7 +99,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +      const days = parseInt(dateFilter, 10);
 +      const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 +
-+      filtered = filtered.filter((deal) => {
++      filtered = filtered.filter(deal => {
 +        const dateField = dateType === 'created' ? deal.DATE_CREATE : deal.CLOSEDATE;
 +        if (!dateField) return false;
 +        const dealDate = new Date(dateField);
@@ -133,7 +109,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +      const start = new Date(customStartDate);
 +      const end = new Date(customEndDate);
 +
-+      filtered = filtered.filter((deal) => {
++      filtered = filtered.filter(deal => {
 +        const dateField = dateType === 'created' ? deal.DATE_CREATE : deal.CLOSEDATE;
 +        if (!dateField) return false;
 +        const dealDate = new Date(dateField);
@@ -148,12 +124,10 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +    if (allDeals.length > 0) {
 +      applyFilters(allDeals);
 +    }
-+  }, [dateFilter, dateType, customStartDate, customEndDate, selectedUser, isAdmin]);
++  }, [dateFilter, dateType, customStartDate, customEndDate, user]);
 +
 +  const handleLogin = async () => {
-+    const normalizedEmail = loginEmail.trim().toLowerCase();
-+
-+    if (!normalizedEmail) {
++    if (!loginEmail) {
 +      alert('Digite seu email');
 +      return;
 +    }
@@ -172,18 +146,14 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +
 +      setUsers(data.result);
 +
-+      const bitrixUser = data.result.find(
-+        (u) => u.EMAIL && u.EMAIL.toLowerCase() === normalizedEmail
-+      );
++      const bitrixUser = data.result.find(u => u.EMAIL && u.EMAIL.toLowerCase() === loginEmail.toLowerCase());
 +
 +      if (bitrixUser) {
 +        const foundUser = {
 +          id: bitrixUser.ID,
 +          name: bitrixUser.NAME || bitrixUser.LAST_NAME || 'Corretor',
-+          email: bitrixUser.EMAIL
++          email: loginEmail
 +        };
-+
-+        setIsAdmin(ADMIN_EMAILS.includes(normalizedEmail));
 +        setUser(foundUser);
 +        await fetchDeals();
 +        setLoading(false);
@@ -203,44 +173,34 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +    setDeals([]);
 +    setAllDeals([]);
 +    setLoginEmail('');
-+    setIsAdmin(false);
-+    setSelectedUser('all');
 +  };
 +
 +  const calculateStats = () => {
-+    const activeDeals = deals.filter((d) => d.STAGE_SEMANTIC_ID !== 'F' && d.STAGE_SEMANTIC_ID !== 'S');
++    const activeDeals = deals.filter(d => d.STAGE_SEMANTIC_ID !== 'F' && d.STAGE_SEMANTIC_ID !== 'S');
 +    const totalDeals = deals.length;
 +    const totalValue = deals.reduce((sum, deal) => sum + parseFloat(deal.OPPORTUNITY || 0), 0);
-+    const wonDeals = deals.filter((d) => d.STAGE_SEMANTIC_ID === 'S').length;
-+    const lostDeals = deals.filter((d) => d.STAGE_SEMANTIC_ID === 'F').length;
++    const wonDeals = deals.filter(d => d.STAGE_SEMANTIC_ID === 'S').length;
++    const lostDeals = deals.filter(d => d.STAGE_SEMANTIC_ID === 'F').length;
 +
 +    const weightedValue = deals.reduce((sum, deal) => {
 +      const value = parseFloat(deal.OPPORTUNITY || 0);
 +      const stageInfo = getStageInfo(deal.STAGE_ID);
-+      return sum + (value * stageInfo.probability) / 100;
++      return sum + value * (stageInfo.probability / 100);
 +    }, 0);
 +
 +    const conversionRate = totalDeals > 0 ? ((wonDeals / totalDeals) * 100).toFixed(1) : 0;
 +
-+    return {
-+      totalDeals,
-+      totalValue,
-+      wonDeals,
-+      lostDeals,
-+      weightedValue,
-+      conversionRate,
-+      activeDeals: activeDeals.length
-+    };
++    return { totalDeals, totalValue, wonDeals, lostDeals, weightedValue, conversionRate, activeDeals: activeDeals.length };
 +  };
 +
 +  const getPriorityActionsByUser = () => {
 +    const byUser = {};
 +
-+    deals.forEach((deal) => {
++    deals.forEach(deal => {
 +      if (deal.STAGE_SEMANTIC_ID === 'S' || deal.STAGE_SEMANTIC_ID === 'F') return;
 +
 +      const userId = deal.ASSIGNED_BY_ID || 'Sem responsável';
-+      const userName = users.find((u) => u.ID === userId)?.NAME || `Corretor ${userId}`;
++      const userName = users.find(u => u.ID === userId)?.NAME || `Corretor ${userId}`;
 +      const daysStale = getDaysStale(deal);
 +      const stageInfo = getStageInfo(deal.STAGE_ID);
 +      const value = parseFloat(deal.OPPORTUNITY || 0);
@@ -259,29 +219,27 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +      if (value > 400000 && daysStale > 3) byUser[userId].highValue.push(deal);
 +    });
 +
-+    return Object.values(byUser).filter(
-+      (u) => u.stale.length > 0 || u.hot.length > 0 || u.highValue.length > 0
-+    );
++    return Object.values(byUser).filter(u => u.stale.length > 0 || u.hot.length > 0 || u.highValue.length > 0);
 +  };
 +
 +  const getActiveDeals = () => {
 +    return deals
-+      .filter((d) => d.STAGE_SEMANTIC_ID !== 'F' && d.STAGE_SEMANTIC_ID !== 'S')
++      .filter(d => d.STAGE_SEMANTIC_ID !== 'F' && d.STAGE_SEMANTIC_ID !== 'S')
 +      .sort((a, b) => parseFloat(b.OPPORTUNITY || 0) - parseFloat(a.OPPORTUNITY || 0));
 +  };
 +
 +  const getLostDeals = () => {
 +    return deals
-+      .filter((d) => d.STAGE_SEMANTIC_ID === 'F')
++      .filter(d => d.STAGE_SEMANTIC_ID === 'F')
 +      .sort((a, b) => new Date(b.DATE_MODIFY) - new Date(a.DATE_MODIFY));
 +  };
 +
 +  const getStagesByUser = () => {
 +    const userStages = {};
 +
-+    deals.forEach((deal) => {
++    deals.forEach(deal => {
 +      const userId = deal.ASSIGNED_BY_ID || 'Sem responsável';
-+      const userName = users.find((u) => u.ID === userId)?.NAME || `Corretor ${userId}`;
++      const userName = users.find(u => u.ID === userId)?.NAME || `Corretor ${userId}`;
 +      const stageInfo = getStageInfo(deal.STAGE_ID);
 +
 +      if (!userStages[userId]) {
@@ -323,7 +281,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +
 +  const getChartData = () => {
 +    const userStages = getStagesByUser();
-+    return userStages.slice(0, 10).map((user) => ({
++    return userStages.slice(0, 10).map(user => ({
 +      name: user.name.split(' ')[0],
 +      total: user.total,
 +      weighted: user.weighted,
@@ -333,7 +291,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +
 +  const getConversionFunnel = () => {
 +    const funnel = {};
-+    deals.forEach((deal) => {
++    deals.forEach(deal => {
 +      const stageInfo = getStageInfo(deal.STAGE_ID);
 +      if (!funnel[stageInfo.name]) {
 +        funnel[stageInfo.name] = { count: 0, order: stageInfo.order };
@@ -377,19 +335,11 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +          }}
 +        >
 +          <h1
-+            style={{
-+              fontSize: '28px',
-+              fontWeight: 'bold',
-+              color: colors.dark,
-+              marginBottom: '10px',
-+              textAlign: 'center'
-+            }}
++            style={{ fontSize: '28px', fontWeight: 'bold', color: colors.dark, marginBottom: '10px', textAlign: 'center' }}
 +          >
 +            Dashboard Forecast
 +          </h1>
-+          <p style={{ color: '#666', textAlign: 'center', marginBottom: '30px' }}>
-+            Sistema Inteligente de Vendas
-+          </p>
++          <p style={{ color: '#666', textAlign: 'center', marginBottom: '30px' }}>Sistema Inteligente de Vendas</p>
 +
 +          <input
 +            type="email"
@@ -427,14 +377,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +            {loading ? 'Validando...' : 'Entrar'}
 +          </button>
 +
-+          <p
-+            style={{
-+              fontSize: '12px',
-+              color: '#999',
-+              marginTop: '20px',
-+              textAlign: 'center'
-+            }}
-+          >
++          <p style={{ fontSize: '12px', color: '#999', marginTop: '20px', textAlign: 'center' }}>
 +            🔒 Apenas corretores cadastrados podem acessar
 +          </p>
 +        </div>
@@ -456,12 +399,8 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +        }}
 +      >
 +        <div>
-+          <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
-+            Dashboard Forecast - Alvo Imóveis
-+          </h1>
-+          <p style={{ fontSize: '14px', opacity: 0.7, margin: '5px 0 0 0' }}>
-+            {isAdmin ? '👨‍💼 Visão Gerencial' : `👤 ${user.name}`}
-+          </p>
++          <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>Dashboard Forecast - Alvo Imóveis</h1>
++          <p style={{ fontSize: '14px', opacity: 0.7, margin: '5px 0 0 0' }}>👤 {user.name}</p>
 +        </div>
 +        <button
 +          onClick={handleLogout}
@@ -480,13 +419,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +        </button>
 +      </header>
 +
-+      <div
-+        style={{
-+          background: colors.light,
-+          borderBottom: `2px solid ${colors.gray}`,
-+          padding: '15px 30px'
-+        }}
-+      >
++      <div style={{ background: colors.light, borderBottom: `2px solid ${colors.gray}`, padding: '15px 30px' }}>
 +        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
 +          {[
 +            { id: 'overview', label: '📊 Visão Geral' },
@@ -537,48 +470,9 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +                alignItems: 'center'
 +              }}
 +            >
-+              {isAdmin && (
-+                <div>
-+                  <label
-+                    style={{
-+                      fontSize: '14px',
-+                      color: '#666',
-+                      marginBottom: '8px',
-+                      display: 'block'
-+                    }}
-+                  >
-+                    👤 Corretor:
-+                  </label>
-+                  <select
-+                    value={selectedUser}
-+                    onChange={(e) => setSelectedUser(e.target.value)}
-+                    style={{
-+                      padding: '10px',
-+                      borderRadius: '8px',
-+                      border: '2px solid #ddd',
-+                      fontSize: '14px',
-+                      cursor: 'pointer',
-+                      minWidth: '200px'
-+                    }}
-+                  >
-+                    <option value="all">Todos os corretores</option>
-+                    {users.map((u) => (
-+                      <option key={u.ID} value={u.ID}>
-+                        {u.NAME || u.LAST_NAME}
-+                      </option>
-+                    ))}
-+                  </select>
-+                </div>
-+              )}
-+
 +              <div>
 +                <label
-+                  style={{
-+                    fontSize: '14px',
-+                    color: '#666',
-+                    marginBottom: '8px',
-+                    display: 'block'
-+                  }}
++                  style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}
 +                >
 +                  📅 Período:
 +                </label>
@@ -604,12 +498,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +
 +              <div>
 +                <label
-+                  style={{
-+                    fontSize: '14px',
-+                    color: '#666',
-+                    marginBottom: '8px',
-+                    display: 'block'
-+                  }}
++                  style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}
 +                >
 +                  📆 Tipo:
 +                </label>
@@ -633,12 +522,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +                <>
 +                  <div>
 +                    <label
-+                      style={{
-+                        fontSize: '14px',
-+                        color: '#666',
-+                        marginBottom: '8px',
-+                        display: 'block'
-+                      }}
++                      style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}
 +                    >
 +                      De:
 +                    </label>
@@ -656,12 +540,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +                  </div>
 +                  <div>
 +                    <label
-+                      style={{
-+                        fontSize: '14px',
-+                        color: '#666',
-+                        marginBottom: '8px',
-+                        display: 'block'
-+                      }}
++                      style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}
 +                    >
 +                      Até:
 +                    </label>
@@ -697,17 +576,13 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +                >
 +                  <StatCard
 +                    title="Pipeline Total"
-+                    value={`R$ ${stats.totalValue.toLocaleString('pt-BR', {
-+                      minimumFractionDigits: 2
-+                    })}`}
++                    value={`R$ ${stats.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
 +                    color={colors.secondary}
 +                    icon="💰"
 +                  />
 +                  <StatCard
 +                    title="Weighted Pipeline"
-+                    value={`R$ ${stats.weightedValue.toLocaleString('pt-BR', {
-+                      minimumFractionDigits: 2
-+                    })}`}
++                    value={`R$ ${stats.weightedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
 +                    color={colors.primary}
 +                    icon="⚖️"
 +                  />
@@ -801,14 +676,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +                      borderLeft: `6px solid ${colors.primary}`
 +                    }}
 +                  >
-+                    <h3
-+                      style={{
-+                        fontSize: '20px',
-+                        fontWeight: 'bold',
-+                        color: colors.dark,
-+                        marginBottom: '20px'
-+                      }}
-+                    >
++                    <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: colors.dark, marginBottom: '20px' }}>
 +                      👤 {userData.name}
 +                    </h3>
 +
@@ -819,13 +687,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +                            🚨 Parados ({userData.stale.length})
 +                          </h4>
 +                          {(showAllActions ? userData.stale : userData.stale.slice(0, 3)).map((deal) => (
-+                            <DealRow
-+                              key={deal.ID}
-+                              deal={deal}
-+                              users={users}
-+                              daysStale={getDaysStale(deal)}
-+                              type="stale"
-+                            />
++                            <DealRow key={deal.ID} deal={deal} users={users} daysStale={getDaysStale(deal)} type="stale" />
 +                          ))}
 +                        </div>
 +                      )}
@@ -853,13 +715,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +                            💎 Alto Valor ({userData.highValue.length})
 +                          </h4>
 +                          {(showAllActions ? userData.highValue : userData.highValue.slice(0, 3)).map((deal) => (
-+                            <DealRow
-+                              key={deal.ID}
-+                              deal={deal}
-+                              users={users}
-+                              daysStale={getDaysStale(deal)}
-+                              type="highValue"
-+                            />
++                            <DealRow key={deal.ID} deal={deal} users={users} daysStale={getDaysStale(deal)} type="highValue" />
 +                          ))}
 +                        </div>
 +                      )}
@@ -868,14 +724,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +                ))}
 +
 +                {priorityActionsByUser.length === 0 && (
-+                  <div
-+                    style={{
-+                      textAlign: 'center',
-+                      padding: '50px',
-+                      background: colors.light,
-+                      borderRadius: '12px'
-+                    }}
-+                  >
++                  <div style={{ textAlign: 'center', padding: '50px', background: colors.light, borderRadius: '12px' }}>
 +                    <p style={{ fontSize: '18px', color: colors.green, fontWeight: 'bold' }}>
 +                      ✅ Nenhuma ação prioritária! Excelente trabalho!
 +                    </p>
@@ -886,12 +735,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +
 +            {activeTab === 'performance' && (
 +              <div
-+                style={{
-+                  background: colors.light,
-+                  padding: '25px',
-+                  borderRadius: '12px',
-+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-+                }}
++                style={{ background: colors.light, padding: '25px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
 +              >
 +                <h3 style={{ marginBottom: '20px', color: colors.dark }}>🎯 Ranking de Corretores</h3>
 +
@@ -903,12 +747,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +
 +            {activeTab === 'active' && (
 +              <div
-+                style={{
-+                  background: colors.light,
-+                  padding: '25px',
-+                  borderRadius: '12px',
-+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-+                }}
++                style={{ background: colors.light, padding: '25px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
 +              >
 +                <h3 style={{ marginBottom: '20px', color: colors.dark }}>
 +                  🔥 Deals em Andamento ({activeDeals.length} negócios)
@@ -935,12 +774,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +
 +            {activeTab === 'lost' && (
 +              <div
-+                style={{
-+                  background: colors.light,
-+                  padding: '25px',
-+                  borderRadius: '12px',
-+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-+                }}
++                style={{ background: colors.light, padding: '25px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
 +              >
 +                <h3 style={{ marginBottom: '20px', color: colors.dark }}>
 +                  ❌ Deals Perdidos ({lostDeals.length} negócios)
@@ -1010,9 +844,7 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +      }}
 +    >
 +      <div style={{ flex: 1 }}>
-+        <h4 style={{ margin: '0 0 5px 0', fontSize: '16px', fontWeight: 'bold' }}>
-+          {deal.TITLE || 'Sem título'}
-+        </h4>
++        <h4 style={{ margin: '0 0 5px 0', fontSize: '16px', fontWeight: 'bold' }}>{deal.TITLE || 'Sem título'}</h4>
 +        <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
 +          💰 R$ {value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 +        </p>
@@ -1086,21 +918,12 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +      }}
 +    >
 +      <div style={{ flex: 1 }}>
-+        <h4
-+          style={{
-+            margin: '0 0 8px 0',
-+            fontSize: '18px',
-+            fontWeight: 'bold',
-+            color: colors.dark
-+          }}
-+        >
++        <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 'bold', color: colors.dark }}>
 +          {deal.TITLE || 'Sem título'}
 +        </h4>
 +        <div style={{ display: 'flex', gap: '20px', fontSize: '14px', color: '#666' }}>
 +          <span>👤 {userName}</span>
-+          <span>
-+            💰 R$ {value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-+          </span>
++          <span>💰 R$ {value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
 +          <span>📅 {dateModified}</span>
 +          {!isLost && <span>⏱️ {daysStale} dias sem atividade</span>}
 +        </div>
@@ -1145,36 +968,19 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +        borderBottom: `2px solid ${colors.primary}`
 +      }}
 +    >
-+      <h4
-+        style={{
-+          fontSize: '20px',
-+          color: colors.dark,
-+          margin: 0,
-+          fontWeight: 'bold'
-+        }}
-+      >
-+        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤'} {userData.name} ({
-+          userData.count
-+        } negócios)
++      <h4 style={{ fontSize: '20px', color: colors.dark, margin: 0, fontWeight: 'bold' }}>
++        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤'} {userData.name} ({userData.count} negócios)
 +      </h4>
 +      <div style={{ textAlign: 'right' }}>
 +        <div style={{ fontSize: '14px', color: '#666' }}>Pipeline Total</div>
 +        <div style={{ fontSize: '20px', fontWeight: 'bold', color: colors.primary }}>
 +          R$ {userData.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 +        </div>
-+        <div
-+          style={{
-+            fontSize: '14px',
-+            color: colors.secondary,
-+            fontWeight: 'bold',
-+            marginTop: '5px'
-+          }}
-+        >
++        <div style={{ fontSize: '14px', color: colors.secondary, fontWeight: 'bold', marginTop: '5px' }}>
 +          💰 Weighted: R$ {userData.weighted.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 +        </div>
 +        <div style={{ fontSize: '14px', marginTop: '5px' }}>
-+          <span style={{ color: colors.green }}>✅ {userData.won}</span> |{' '}
-+          <span style={{ color: colors.red }}>❌ {userData.lost}</span>
++          <span style={{ color: colors.green }}>✅ {userData.won}</span> | <span style={{ color: colors.red }}>❌ {userData.lost}</span>
 +        </div>
 +      </div>
 +    </div>
@@ -1228,30 +1034,14 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +                    {stageData.probability}%
 +                  </span>
 +                </td>
-+                <td
-+                  style={{
-+                    padding: '12px',
-+                    textAlign: 'center',
-+                    fontWeight: 'bold',
-+                    color: colors.primary
-+                  }}
-+                >
++                <td style={{ padding: '12px', textAlign: 'center', fontWeight: 'bold', color: colors.primary }}>
 +                  {stageData.count}
 +                </td>
 +                <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>
 +                  R$ {stageData.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 +                </td>
-+                <td
-+                  style={{
-+                    padding: '12px',
-+                    textAlign: 'right',
-+                    fontWeight: 'bold',
-+                    color: colors.secondary
-+                  }}
-+                >
-+                  {'R$ ' + ((stageData.value * stageData.probability) / 100).toLocaleString('pt-BR', {
-+                    minimumFractionDigits: 2
-+                  })}
++                <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: colors.secondary }}>
++                  R$ {(stageData.value * stageData.probability / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 +                </td>
 +              </tr>
 +            ))}
@@ -1260,5 +1050,3 @@ index 0000000000000000000000000000000000000000..b2774b7f7da13f44f9ecfcdc0854498a
 +    </div>
 +  </div>
 +);
-+
-+export const BITRIX_ENDPOINT = BITRIX_WEBHOOK;
