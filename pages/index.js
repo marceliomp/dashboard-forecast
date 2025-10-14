@@ -1,3 +1,6 @@
+Aqui está o código completo com todas as alterações de segurança:
+
+```jsx
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -665,8 +668,7 @@ export default function DashboardForecast() {
 
                       {userData.hot.length > 0 && (
                         <div>
-                          <h4 style={{ fontSize: '
-                        <h4 style={{ fontSize: '16px', color: colors.yellow, marginBottom: '10px' }}>
+                          <h4 style={{ fontSize: '16px', color: colors.yellow, marginBottom: '10px' }}>
                             🔥 Quentes ({userData.hot.length})
                           </h4>
                           {(showAllActions ? userData.hot : userData.hot.slice(0, 3)).map(deal => (
