@@ -81,18 +81,22 @@ export default function DashboardForecast() {
     setLoading(false);
   };
 
-  const applyFilters = (dealsData) => {
+const applyFilters = (dealsData) => {
     let filtered = dealsData;
 
     // CRÍTICO: Filtro de usuário SEMPRE aplicado primeiro
     if (!isAdmin && user && user.id !== 'admin') {
       // Corretor normal: VÊ APENAS SEUS PRÓPRIOS DEALS
-      filtered = filtered.filter(deal => deal.ASSIGNED_BY_ID === user.id);
+      console.log('Filtrando para user ID:', user.id);
+      filtered = filtered.filter(deal => {
+        console.log('Deal:', deal.ID, 'Assigned to:', deal.ASSIGNED_BY_ID);
+        return deal.ASSIGNED_BY_ID === user.id;
+      });
+      console.log('Deals filtrados:', filtered.length);
     } else if (isAdmin && selectedUser !== 'all') {
       // Admin com filtro específico
       filtered = filtered.filter(deal => deal.ASSIGNED_BY_ID === selectedUser);
     }
-    // Se isAdmin e selectedUser === 'all', não filtra por usuário
 
     // Filtro de data
     const now = new Date();
