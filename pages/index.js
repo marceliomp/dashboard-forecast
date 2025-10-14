@@ -31,20 +31,19 @@ export default function DashboardForecast() {
     green: '#28a745'
   };
 
-  const stageMap = {
-    'NEW': { name: 'Hora do Ouro', probability: 5, order: 1, color: '#87CEEB' },
-    'PREPARATION': { name: 'NoShow', probability: 3, order: 2, color: '#FF6B6B' },
-    'UC_1QZ0O9': { name: 'Nutrição Ativa', probability: 15, order: 3, color: '#4ECDC4' },
-    'UC_SI76GS': { name: 'Reunião Prevista', probability: 25, order: 4, color: '#45B7D1' },
-    'UC_ZB34M4': { name: 'Show', probability: 40, order: 5, color: '#96CEB4' },
-    'UC_J1PXFX': { name: 'Follow-Up', probability: 50, order: 6, color: '#FFEAA7' },
-    'PREPAYMENT_INVOICE': { name: 'Follow-Up', probability: 50, order: 6, color: '#FFEAA7' },
-    'C1:PREPARATION': { name: 'Em Negociação', probability: 60, order: 7, color: '#DDA15E' },
-    'EXECUTING': { name: 'Proposta Formalizada', probability: 75, order: 8, color: '#BC6C25' },
-    'FINAL_INVOICE': { name: 'Proposta Formalizada', probability: 75, order: 8, color: '#BC6C25' },
-    'WON': { name: 'Negócios Fechados', probability: 100, order: 9, color: '#28a745' },
-    'C1:WON': { name: 'Negócios Fechados', probability: 100, order: 9, color: '#28a745' },
-    'LOSE': { name: 'Negócios Perdido', probability: 0, order: 10, color: '#dc3545' }
+ const stageMap = {
+    'UC_1QZ0O9': { name: 'Hora do Ouro', probability: 0, order: 1, color: '#b3e5fc' },
+    'UC_JGHE6A': { name: 'NoShow', probability: 3, order: 2, color: '#ef9a9a' },
+    'UC_J1PXFX': { name: 'Nutrição Ativa', probability: 15, order: 3, color: '#80deea' },
+    'NEW': { name: 'Reunião Prevista', probability: 25, order: 4, color: '#42a5f5' },
+    'PREPARATION': { name: 'Show', probability: 40, order: 5, color: '#1e88e5' },
+    'UC_SI76GS': { name: 'Follow-Up', probability: 50, order: 6, color: '#ffeb3b' },
+    'PREPAYMENT_INVOICE': { name: 'Em Negociação', probability: 60, order: 7, color: '#ab47bc' },
+    'FINAL_INVOICE': { name: 'Proposta Formalizada / Reserva', probability: 75, order: 8, color: '#ffa726' },
+    'WON': { name: 'Negócios Fechados', probability: 100, order: 9, color: '#7bd500' },
+    'C1:WON': { name: 'Negócios Fechados', probability: 100, order: 9, color: '#7bd500' },
+    'LOSE': { name: 'Negócios Perdido', probability: 0, order: 10, color: '#ff5752' },
+    'UC_ZB34M4': { name: 'Cliente não aceito (sem perfil)', probability: 0, order: 11, color: '#ef3000' }
   };
 
   const getStageInfo = (stageId) => {
