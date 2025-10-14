@@ -202,8 +202,8 @@ export default function DashboardForecast() {
     console.error('Erro ao fazer login:', error);
     setLoading(false);
     alert('Erro ao conectar. Tente novamente.');
-  }
-}
+    }
+  };
     setUser(foundUser);
     await fetchDeals();
   };
