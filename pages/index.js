@@ -637,8 +637,7 @@ export default function DashboardForecast() {
                             🔥 Quentes ({userData.hot.length})
                           </h4>
                           {(showAllActions ? userData.hot : userData.hot.slice(0, 3)).map(deal => (
-                            <DealRow key={deal.ID} deal={
-                            <DealRow key={deal.ID} deal={deal} users={users} stageInfo={getStageInfo(deal.STAGE_ID)} type="hot" />
+                            <DealRow key={deal.ID} deal={<DealRow key={deal.ID} deal={deal} users={users} stageInfo={getStageInfo(deal.STAGE_ID)} type="hot" />
                           ))}
                         </div>
                       )}
