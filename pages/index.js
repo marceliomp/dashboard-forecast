@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const BITRIX_WEBHOOK = 'https://alvo.bitrix24.com.br/rest/1/8notqwwad2r87739/';
 
@@ -12,6 +12,8 @@ export default function DashboardForecast() {
   const [loginEmail, setLoginEmail] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedUser, setSelectedUser] = useState('all');
+  const [showAllActions, setShowAllActions] = useState(false);
   
   const [dateFilter, setDateFilter] = useState('all');
   const [dateType, setDateType] = useState('created');
@@ -29,15 +31,16 @@ export default function DashboardForecast() {
     green: '#28a745'
   };
 
-  // MAPEAMENTO CORRETO DAS ETAPAS DO SEU BITRIX24
   const stageMap = {
     'NEW': { name: 'Hora do Ouro', probability: 5, order: 1, color: '#87CEEB' },
     'PREPARATION': { name: 'NoShow', probability: 3, order: 2, color: '#FF6B6B' },
     'UC_1QZ0O9': { name: 'Nutrição Ativa', probability: 15, order: 3, color: '#4ECDC4' },
-    'UC_J1PXFX': { name: 'Reunião Prevista', probability: 25, order: 4, color: '#45B7D1' },
-    'PREPAYMENT_INVOICE': { name: 'Show', probability: 40, order: 5, color: '#96CEB4' },
-    'EXECUTING': { name: 'Follow-Up', probability: 50, order: 6, color: '#FFEAA7' },
+    'UC_SI76GS': { name: 'Reunião Prevista', probability: 25, order: 4, color: '#45B7D1' },
+    'UC_ZB34M4': { name: 'Show', probability: 40, order: 5, color: '#96CEB4' },
+    'UC_J1PXFX': { name: 'Follow-Up', probability: 50, order: 6, color: '#FFEAA7' },
+    'PREPAYMENT_INVOICE': { name: 'Follow-Up', probability: 50, order: 6, color: '#FFEAA7' },
     'C1:PREPARATION': { name: 'Em Negociação', probability: 60, order: 7, color: '#DDA15E' },
+    'EXECUTING': { name: 'Proposta Formalizada', probability: 75, order: 8, color: '#BC6C25' },
     'FINAL_INVOICE': { name: 'Proposta Formalizada', probability: 75, order: 8, color: '#BC6C25' },
     'WON': { name: 'Negócios Fechados', probability: 100, order: 9, color: '#28a745' },
     'C1:WON': { name: 'Negócios Fechados', probability: 100, order: 9, color: '#28a745' },
@@ -46,14 +49,13 @@ export default function DashboardForecast() {
 
   const getStageInfo = (stageId) => {
     if (!stageId) return { name: 'Sem Etapa', probability: 0, order: 0, color: '#ccc' };
-    const cleanStageId = stageId.replace(/^C\d+:/, '');
     
-    // Checar se é do funil Cop (C1:)
     if (stageId.startsWith('C1:')) {
       if (stageId === 'C1:PREPARATION') return stageMap['C1:PREPARATION'];
       if (stageId === 'C1:WON') return stageMap['C1:WON'];
     }
     
+    const cleanStageId = stageId.replace(/^C\d+:/, '');
     return stageMap[cleanStageId] || stageMap[stageId] || { name: stageId, probability: 30, order: 0, color: '#999' };
   };
 
@@ -86,7 +88,7 @@ export default function DashboardForecast() {
       if (data.result && data.result.length > 0) {
         const salesDeals = data.result.filter(deal => deal.CATEGORY_ID === "0");
         setAllDeals(salesDeals);
-        applyDateFilter(salesDeals, dateFilter, dateType);
+        applyFilters(salesDeals);
       }
     } catch (error) {
       console.error('Erro ao buscar deals:', error);
@@ -94,40 +96,48 @@ export default function DashboardForecast() {
     setLoading(false);
   };
 
-  const applyDateFilter = (dealsData, filter, type) => {
-    const now = new Date();
-    let filteredDeals = dealsData;
+  const applyFilters = (dealsData) => {
+    let filtered = dealsData;
 
-    if (filter !== 'all' && filter !== 'custom') {
-      const days = parseInt(filter);
+    // Filtro de usuário (se não for admin, mostra só seus deals)
+    if (!isAdmin && user) {
+      filtered = filtered.filter(deal => deal.ASSIGNED_BY_ID === user.id);
+    } else if (isAdmin && selectedUser !== 'all') {
+      filtered = filtered.filter(deal => deal.ASSIGNED_BY_ID === selectedUser);
+    }
+
+    // Filtro de data
+    const now = new Date();
+    if (dateFilter !== 'all' && dateFilter !== 'custom') {
+      const days = parseInt(dateFilter);
       const startDate = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
 
-      filteredDeals = dealsData.filter(deal => {
-        const dateField = type === 'created' ? deal.DATE_CREATE : deal.CLOSEDATE;
+      filtered = filtered.filter(deal => {
+        const dateField = dateType === 'created' ? deal.DATE_CREATE : deal.CLOSEDATE;
         if (!dateField) return false;
         const dealDate = new Date(dateField);
         return dealDate >= startDate && dealDate <= now;
       });
-    } else if (filter === 'custom' && customStartDate && customEndDate) {
+    } else if (dateFilter === 'custom' && customStartDate && customEndDate) {
       const start = new Date(customStartDate);
       const end = new Date(customEndDate);
 
-      filteredDeals = dealsData.filter(deal => {
-        const dateField = type === 'created' ? deal.DATE_CREATE : deal.CLOSEDATE;
+      filtered = filtered.filter(deal => {
+        const dateField = dateType === 'created' ? deal.DATE_CREATE : deal.CLOSEDATE;
         if (!dateField) return false;
         const dealDate = new Date(dateField);
         return dealDate >= start && dealDate <= end;
       });
     }
 
-    setDeals(filteredDeals);
+    setDeals(filtered);
   };
 
   useEffect(() => {
     if (allDeals.length > 0) {
-      applyDateFilter(allDeals, dateFilter, dateType);
+      applyFilters(allDeals);
     }
-  }, [dateFilter, dateType, customStartDate, customEndDate]);
+  }, [dateFilter, dateType, customStartDate, customEndDate, selectedUser, isAdmin]);
 
   const handleLogin = async () => {
     if (!loginEmail) {
@@ -141,9 +151,12 @@ export default function DashboardForecast() {
     const isUserAdmin = adminEmails.includes(loginEmail.toLowerCase());
     setIsAdmin(isUserAdmin);
     
+    // Buscar usuário real do Bitrix
+    const bitrixUser = users.find(u => u.EMAIL && u.EMAIL.toLowerCase() === loginEmail.toLowerCase());
+    
     const foundUser = { 
-      id: isUserAdmin ? 'admin' : '1', 
-      name: isUserAdmin ? 'Administrador' : loginEmail.split('@')[0],
+      id: isUserAdmin ? 'admin' : (bitrixUser ? bitrixUser.ID : '1'), 
+      name: isUserAdmin ? 'Administrador' : (bitrixUser ? bitrixUser.NAME : loginEmail.split('@')[0]),
       email: loginEmail 
     };
     
@@ -157,6 +170,7 @@ export default function DashboardForecast() {
     setAllDeals([]);
     setLoginEmail('');
     setIsAdmin(false);
+    setSelectedUser('all');
   };
 
   const calculateStats = () => {
@@ -177,36 +191,41 @@ export default function DashboardForecast() {
     return { totalDeals, totalValue, wonDeals, lostDeals, weightedValue, conversionRate, activeDeals: activeDeals.length };
   };
 
-  const getPriorityActions = () => {
-    const staleDeals = deals.filter(deal => {
-      if (deal.STAGE_SEMANTIC_ID === 'S' || deal.STAGE_SEMANTIC_ID === 'F') return false;
-      const days = getDaysStale(deal);
-      return days > 7;
-    }).sort((a, b) => getDaysStale(b) - getDaysStale(a));
+  // Ações prioritárias agrupadas por corretor
+  const getPriorityActionsByUser = () => {
+    const byUser = {};
 
-    const hotDeals = deals.filter(deal => {
-      if (deal.STAGE_SEMANTIC_ID === 'S' || deal.STAGE_SEMANTIC_ID === 'F') return false;
+    deals.forEach(deal => {
+      if (deal.STAGE_SEMANTIC_ID === 'S' || deal.STAGE_SEMANTIC_ID === 'F') return;
+
+      const userId = deal.ASSIGNED_BY_ID || 'Sem responsável';
+      const userName = users.find(u => u.ID === userId)?.NAME || `Corretor ${userId}`;
+      const daysStale = getDaysStale(deal);
       const stageInfo = getStageInfo(deal.STAGE_ID);
-      return stageInfo.probability >= 60;
-    });
-
-    const highValueStale = deals.filter(deal => {
-      if (deal.STAGE_SEMANTIC_ID === 'S' || deal.STAGE_SEMANTIC_ID === 'F') return false;
       const value = parseFloat(deal.OPPORTUNITY || 0);
-      const days = getDaysStale(deal);
-      return value > 400000 && days > 3;
+
+      if (!byUser[userId]) {
+        byUser[userId] = {
+          name: userName,
+          stale: [],
+          hot: [],
+          highValue: []
+        };
+      }
+
+      if (daysStale > 7) byUser[userId].stale.push(deal);
+      if (stageInfo.probability >= 60) byUser[userId].hot.push(deal);
+      if (value > 400000 && daysStale > 3) byUser[userId].highValue.push(deal);
     });
 
-    return { staleDeals, hotDeals, highValueStale };
+    return Object.values(byUser).filter(u => u.stale.length > 0 || u.hot.length > 0 || u.highValue.length > 0);
   };
 
-  // DEALS EM ANDAMENTO (todos os ativos)
   const getActiveDeals = () => {
     return deals.filter(d => d.STAGE_SEMANTIC_ID !== 'F' && d.STAGE_SEMANTIC_ID !== 'S')
       .sort((a, b) => parseFloat(b.OPPORTUNITY || 0) - parseFloat(a.OPPORTUNITY || 0));
   };
 
-  // DEALS PERDIDOS (todos)
   const getLostDeals = () => {
     return deals.filter(d => d.STAGE_SEMANTIC_ID === 'F')
       .sort((a, b) => new Date(b.DATE_MODIFY) - new Date(a.DATE_MODIFY));
@@ -217,7 +236,7 @@ export default function DashboardForecast() {
     
     deals.forEach(deal => {
       const userId = deal.ASSIGNED_BY_ID || 'Sem responsável';
-      const userName = users.find(u => u.ID === userId)?.NAME || users.find(u => u.ID === userId)?.LAST_NAME || `Corretor ${userId}`;
+      const userName = users.find(u => u.ID === userId)?.NAME || `Corretor ${userId}`;
       const stageInfo = getStageInfo(deal.STAGE_ID);
       
       if (!userStages[userId]) {
@@ -285,7 +304,7 @@ export default function DashboardForecast() {
   const stats = calculateStats();
   const stagesByUser = getStagesByUser();
   const chartData = getChartData();
-  const priorityActions = getPriorityActions();
+  const priorityActionsByUser = getPriorityActionsByUser();
   const funnelData = getConversionFunnel();
   const activeDeals = getActiveDeals();
   const lostDeals = getLostDeals();
@@ -371,43 +390,47 @@ export default function DashboardForecast() {
             Dashboard Forecast - Alvo Imóveis
           </h1>
           <p style={{ fontSize: '14px', opacity: 0.7, margin: '5px 0 0 0' }}>
-            {isAdmin ? '👨‍💼 Visão Gerencial - Funil de Vendas' : `👤 ${user.name}`}
+            {isAdmin ? '👨‍💼 Visão Gerencial' : `👤 ${user.name}`}
           </p>
         </div>
         <button onClick={handleLogout} style={{
-          padding: '10px 20px',
+          padding: '12px 24px',
           background: colors.primary,
           color: colors.light,
           border: 'none',
-          borderRadius: '6px',
+          borderRadius: '25px',
           cursor: 'pointer',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          fontSize: '14px'
         }}>
           Sair
         </button>
       </header>
 
-      <div style={{ background: colors.light, borderBottom: `2px solid ${colors.gray}`, padding: '0 30px' }}>
-        <div style={{ display: 'flex', gap: '10px' }}>
+      {/* TABS COM BOTÕES ARREDONDADOS */}
+      <div style={{ background: colors.light, borderBottom: `2px solid ${colors.gray}`, padding: '15px 30px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {[
             { id: 'overview', label: '📊 Visão Geral' },
             { id: 'actions', label: '⚡ Ações Prioritárias' },
             { id: 'performance', label: '🏆 Performance' },
-            { id: 'active', label: '🔥 Deals em Andamento' },
-            { id: 'lost', label: '❌ Deals Perdidos' }
+            { id: 'active', label: '🔥 Em Andamento' },
+            { id: 'lost', label: '❌ Perdidos' }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: '15px 20px',
-                background: activeTab === tab.id ? colors.primary : 'transparent',
+                padding: '12px 24px',
+                background: activeTab === tab.id ? colors.primary : colors.gray,
                 color: activeTab === tab.id ? colors.light : colors.dark,
                 border: 'none',
-                borderBottom: activeTab === tab.id ? `3px solid ${colors.secondary}` : 'none',
+                borderRadius: '25px',
                 cursor: 'pointer',
                 fontWeight: 'bold',
-                fontSize: '15px'
+                fontSize: '14px',
+                transition: 'all 0.3s',
+                boxShadow: activeTab === tab.id ? '0 4px 8px rgba(0,0,0,0.2)' : 'none'
               }}
             >
               {tab.label}
@@ -423,6 +446,7 @@ export default function DashboardForecast() {
           </div>
         ) : (
           <>
+            {/* FILTROS */}
             <div style={{
               background: colors.light,
               padding: '20px',
@@ -434,11 +458,30 @@ export default function DashboardForecast() {
               flexWrap: 'wrap',
               alignItems: 'center'
             }}>
+              {isAdmin && (
+                <div>
+                  <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>👤 Corretor:</label>
+                  <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} style={{
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '2px solid #ddd',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    minWidth: '200px'
+                  }}>
+                    <option value="all">Todos os corretores</option>
+                    {users.map(u => (
+                      <option key={u.ID} value={u.ID}>{u.NAME || u.LAST_NAME}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>📅 Período:</label>
                 <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} style={{
                   padding: '10px',
-                  borderRadius: '6px',
+                  borderRadius: '8px',
                   border: '2px solid #ddd',
                   fontSize: '14px',
                   cursor: 'pointer'
@@ -456,7 +499,7 @@ export default function DashboardForecast() {
                 <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>📆 Tipo:</label>
                 <select value={dateType} onChange={(e) => setDateType(e.target.value)} style={{
                   padding: '10px',
-                  borderRadius: '6px',
+                  borderRadius: '8px',
                   border: '2px solid #ddd',
                   fontSize: '14px',
                   cursor: 'pointer'
@@ -472,7 +515,7 @@ export default function DashboardForecast() {
                     <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>De:</label>
                     <input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} style={{
                       padding: '10px',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       border: '2px solid #ddd',
                       fontSize: '14px'
                     }} />
@@ -481,7 +524,7 @@ export default function DashboardForecast() {
                     <label style={{ fontSize: '14px', color: '#666', marginBottom: '8px', display: 'block' }}>Até:</label>
                     <input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} style={{
                       padding: '10px',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       border: '2px solid #ddd',
                       fontSize: '14px'
                     }} />
@@ -490,10 +533,11 @@ export default function DashboardForecast() {
               )}
 
               <div style={{ marginLeft: 'auto', fontSize: '14px', color: '#666' }}>
-                <strong>{deals.length}</strong> de <strong>{allDeals.length}</strong> negócios
+                <strong>{deals.length}</strong> negócios
               </div>
             </div>
 
+            {/* VISÃO GERAL */}
             {activeTab === 'overview' && (
               <>
                 <div style={{ 
@@ -542,28 +586,88 @@ export default function DashboardForecast() {
               </>
             )}
 
+            {/* AÇÕES PRIORITÁRIAS AGRUPADAS POR CORRETOR */}
             {activeTab === 'actions' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
-                <AlertCard title="🚨 Deals Parados (sem atividade há +7 dias)" count={priorityActions.staleDeals.length} color={colors.red}>
-                  {priorityActions.staleDeals.slice(0, 10).map(deal => (
-                    <DealRow key={deal.ID} deal={deal} users={users} daysStale={getDaysStale(deal)} type="stale" />
-                  ))}
-                </AlertCard>
+                <div style={{ marginBottom: '20px', textAlign: 'right' }}>
+                  <button
+                    onClick={() => setShowAllActions(!showAllActions)}
+                    style={{
+                      padding: '12px 24px',
+                      background: colors.primary,
+                      color: colors.light,
+                      border: 'none',
+                      borderRadius: '25px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {showAllActions ? '📋 Ver Resumo' : '📊 Ver Todas as Ações'}
+                  </button>
+                </div>
 
-                <AlertCard title="🔥 Deals Quentes (>60% probabilidade)" count={priorityActions.hotDeals.length} color={colors.yellow}>
-                  {priorityActions.hotDeals.slice(0, 10).map(deal => (
-                    <DealRow key={deal.ID} deal={deal} users={users} stageInfo={getStageInfo(deal.STAGE_ID)} type="hot" />
-                  ))}
-                </AlertCard>
+                {priorityActionsByUser.map((userData, index) => (
+                  <div key={index} style={{
+                    background: colors.light,
+                    padding: '25px',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    borderLeft: `6px solid ${colors.primary}`
+                  }}>
+                    <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: colors.dark, marginBottom: '20px' }}>
+                      👤 {userData.name}
+                    </h3>
 
-                <AlertCard title="💎 Alto Valor Parados (>R$ 400k e +3 dias)" count={priorityActions.highValueStale.length} color={colors.primary}>
-                  {priorityActions.highValueStale.slice(0, 10).map(deal => (
-                    <DealRow key={deal.ID} deal={deal} users={users} daysStale={getDaysStale(deal)} type="highValue" />
-                  ))}
-                </AlertCard>
+                    <div style={{ display: 'grid', gap: '15px' }}>
+                      {userData.stale.length > 0 && (
+                        <div>
+                          <h4 style={{ fontSize: '16px', color: colors.red, marginBottom: '10px' }}>
+                            🚨 Parados ({userData.stale.length})
+                          </h4>
+                          {(showAllActions ? userData.stale : userData.stale.slice(0, 3)).map(deal => (
+                            <DealRow key={deal.ID} deal={deal} users={users} daysStale={getDaysStale(deal)} type="stale" />
+                          ))}
+                        </div>
+                      )}
+
+                      {userData.hot.length > 0 && (
+                        <div>
+                          <h4 style={{ fontSize: '16px', color: colors.yellow, marginBottom: '10px' }}>
+                            🔥 Quentes ({userData.hot.length})
+                          </h4>
+                          {(showAllActions ? userData.hot : userData.hot.slice(0, 3)).map(deal => (
+                            <DealRow key={deal.ID} deal={
+                            <DealRow key={deal.ID} deal={deal} users={users} stageInfo={getStageInfo(deal.STAGE_ID)} type="hot" />
+                          ))}
+                        </div>
+                      )}
+
+                      {userData.highValue.length > 0 && (
+                        <div>
+                          <h4 style={{ fontSize: '16px', color: colors.primary, marginBottom: '10px' }}>
+                            💎 Alto Valor ({userData.highValue.length})
+                          </h4>
+                          {(showAllActions ? userData.highValue : userData.highValue.slice(0, 3)).map(deal => (
+                            <DealRow key={deal.ID} deal={deal} users={users} daysStale={getDaysStale(deal)} type="highValue" />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {priorityActionsByUser.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '50px', background: colors.light, borderRadius: '12px' }}>
+                    <p style={{ fontSize: '18px', color: colors.green, fontWeight: 'bold' }}>
+                      ✅ Nenhuma ação prioritária! Excelente trabalho!
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
+            {/* PERFORMANCE */}
             {activeTab === 'performance' && (
               <div style={{ background: colors.light, padding: '25px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                 <h3 style={{ marginBottom: '20px', color: colors.dark }}>🎯 Ranking de Corretores</h3>
@@ -574,6 +678,7 @@ export default function DashboardForecast() {
               </div>
             )}
 
+            {/* DEALS EM ANDAMENTO */}
             {activeTab === 'active' && (
               <div style={{ background: colors.light, padding: '25px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                 <h3 style={{ marginBottom: '20px', color: colors.dark }}>
@@ -583,9 +688,16 @@ export default function DashboardForecast() {
                 {activeDeals.map(deal => (
                   <DealDetailRow key={deal.ID} deal={deal} users={users} getStageInfo={getStageInfo} getDaysStale={getDaysStale} colors={colors} />
                 ))}
+
+                {activeDeals.length === 0 && (
+                  <p style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
+                    Nenhum deal em andamento no período selecionado
+                  </p>
+                )}
               </div>
             )}
 
+            {/* DEALS PERDIDOS */}
             {activeTab === 'lost' && (
               <div style={{ background: colors.light, padding: '25px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                 <h3 style={{ marginBottom: '20px', color: colors.dark }}>
@@ -595,6 +707,12 @@ export default function DashboardForecast() {
                 {lostDeals.map(deal => (
                   <DealDetailRow key={deal.ID} deal={deal} users={users} getStageInfo={getStageInfo} getDaysStale={getDaysStale} colors={colors} isLost />
                 ))}
+
+                {lostDeals.length === 0 && (
+                  <p style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
+                    Nenhum deal perdido no período selecionado
+                  </p>
+                )}
               </div>
             )}
           </>
@@ -603,6 +721,8 @@ export default function DashboardForecast() {
     </div>
   );
 }
+
+// COMPONENTES
 
 const StatCard = ({ title, value, color, icon }) => (
   <div style={{
@@ -615,41 +735,10 @@ const StatCard = ({ title, value, color, icon }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div>
         <p style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>{title}</p>
-<p style={{ fontSize: '24px', fontWeight: 'bold', color: color, margin: 0 }}>{value}</p>
+        <p style={{ fontSize: '24px', fontWeight: 'bold', color: color, margin: 0 }}>{value}</p>
       </div>
       <div style={{ fontSize: '36px' }}>{icon}</div>
     </div>
-  </div>
-);
-
-const AlertCard = ({ title, count, color, children }) => (
-  <div style={{
-    background: 'white',
-    padding: '25px',
-    borderRadius: '12px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    borderLeft: `6px solid ${color}`
-  }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#0a0a0a', margin: 0 }}>{title}</h3>
-      <span style={{
-        background: color,
-        color: 'white',
-        padding: '8px 16px',
-        borderRadius: '20px',
-        fontWeight: 'bold',
-        fontSize: '16px'
-      }}>
-        {count}
-      </span>
-    </div>
-    {count === 0 ? (
-      <p style={{ color: '#28a745', fontWeight: 'bold', fontSize: '16px', textAlign: 'center', padding: '20px' }}>
-        ✅ Nenhuma ação necessária! Continue assim!
-      </p>
-    ) : (
-      <div>{children}</div>
-    )}
   </div>
 );
 
@@ -673,7 +762,7 @@ const DealRow = ({ deal, users, daysStale, stageInfo, type }) => {
           {deal.TITLE || 'Sem título'}
         </h4>
         <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
-          👤 {userName} | 💰 R$ {value.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+          💰 R$ {value.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
         </p>
       </div>
       <div style={{ textAlign: 'right' }}>
@@ -682,7 +771,7 @@ const DealRow = ({ deal, users, daysStale, stageInfo, type }) => {
             background: '#dc3545',
             color: 'white',
             padding: '6px 12px',
-            borderRadius: '12px',
+            borderRadius: '20px',
             fontSize: '13px',
             fontWeight: 'bold'
           }}>
@@ -694,7 +783,7 @@ const DealRow = ({ deal, users, daysStale, stageInfo, type }) => {
             background: '#ffc107',
             color: '#000',
             padding: '6px 12px',
-            borderRadius: '12px',
+            borderRadius: '20px',
             fontSize: '13px',
             fontWeight: 'bold'
           }}>
@@ -706,7 +795,7 @@ const DealRow = ({ deal, users, daysStale, stageInfo, type }) => {
             background: '#1a4d4d',
             color: 'white',
             padding: '6px 12px',
-            borderRadius: '12px',
+            borderRadius: '20px',
             fontSize: '13px',
             fontWeight: 'bold'
           }}>
@@ -743,7 +832,7 @@ const DealDetailRow = ({ deal, users, getStageInfo, getDaysStale, colors, isLost
         <div style={{ display: 'flex', gap: '20px', fontSize: '14px', color: '#666' }}>
           <span>👤 {userName}</span>
           <span>💰 R$ {value.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
-          <span>📅 Modificado: {dateModified}</span>
+          <span>📅 {dateModified}</span>
           {!isLost && <span>⏱️ {daysStale} dias sem atividade</span>}
         </div>
       </div>
@@ -752,7 +841,7 @@ const DealDetailRow = ({ deal, users, getStageInfo, getDaysStale, colors, isLost
           background: isLost ? colors.red : stageInfo.color || colors.primary,
           color: 'white',
           padding: '8px 16px',
-          borderRadius: '12px',
+          borderRadius: '20px',
           fontSize: '14px',
           fontWeight: 'bold',
           marginBottom: '5px'
@@ -774,7 +863,7 @@ const PerformanceCard = ({ userData, index, colors }) => (
     marginBottom: '30px',
     padding: '20px',
     background: index % 2 === 0 ? '#fafafa' : colors.light,
-    borderRadius: '8px',
+    borderRadius: '12px',
     border: `2px solid ${colors.gray}`
   }}>
     <div style={{ 
