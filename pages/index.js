@@ -82,6 +82,12 @@ export default function DashboardForecast() {
   };
 
 const applyFilters = (dealsData) => {
+    console.log('🔍 VERIFICANDO ACESSO:');
+    console.log('isAdmin:', isAdmin);
+    console.log('user:', user);
+    console.log('user.id:', user?.id);
+    console.log('Condição (!isAdmin && user && user.id !== admin):', !isAdmin && user && user.id !== 'admin');
+    
     let filtered = dealsData;
 
     // CRÍTICO: Filtro de usuário SEMPRE aplicado primeiro
