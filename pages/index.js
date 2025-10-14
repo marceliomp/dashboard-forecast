@@ -203,6 +203,8 @@ export default function DashboardForecast() {
     setLoading(false);
     alert('Erro ao conectar. Tente novamente.');
   }
+}; 
+  }
 };
     setUser(foundUser);
     await fetchDeals();
