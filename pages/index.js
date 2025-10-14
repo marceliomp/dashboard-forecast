@@ -138,27 +138,68 @@ export default function DashboardForecast() {
     }
   }, [dateFilter, dateType, customStartDate, customEndDate, selectedUser, isAdmin]);
 
-  const handleLogin = async () => {
-    if (!loginEmail) {
-      alert('Digite seu email');
-      return;
-    }
-    
-    await fetchUsers();
-    
-    const adminEmails = ['admin@alvo.com', 'gerente@alvo.com'];
-    const isUserAdmin = adminEmails.includes(loginEmail.toLowerCase());
-    setIsAdmin(isUserAdmin);
-    
-    // Buscar usuário real do Bitrix
-    const bitrixUser = users.find(u => u.EMAIL && u.EMAIL.toLowerCase() === loginEmail.toLowerCase());
-    
+  const handleLogin = async () => {const handleLogin = async () => {
+  if (!loginEmail) {
+    alert('Digite seu email');
+    return;
+  }
+  
+  setLoading(true);
+  
+  // Buscar usuários primeiro
+  await fetchUsers();
+  
+  // Verificar se é admin
+  const adminEmails = ['admin@alvo.com', 'gerente@alvo.com', 'seu-email@alvo.com']; // ADICIONE EMAILS DE GESTORES AQUI
+  const isUserAdmin = adminEmails.includes(loginEmail.toLowerCase());
+  
+  if (isUserAdmin) {
+    // Admin pode entrar
+    setIsAdmin(true);
     const foundUser = { 
-      id: isUserAdmin ? 'admin' : (bitrixUser ? bitrixUser.ID : '1'), 
-      name: isUserAdmin ? 'Administrador' : (bitrixUser ? bitrixUser.NAME : loginEmail.split('@')[0]),
+      id: 'admin', 
+      name: 'Administrador',
       email: loginEmail 
     };
+    setUser(foundUser);
+    await fetchDeals();
+    setLoading(false);
+    return;
+  }
+  
+  // Buscar usuário no Bitrix24
+  try {
+    const response = await fetch(`/api/bitrix?endpoint=user.get`);
+    const data = await response.json();
     
+    if (data.result) {
+      const bitrixUser = data.result.find(u => 
+        u.EMAIL && u.EMAIL.toLowerCase() === loginEmail.toLowerCase()
+      );
+      
+      if (bitrixUser) {
+        // Usuário encontrado no Bitrix24
+        setIsAdmin(false);
+        const foundUser = { 
+          id: bitrixUser.ID, 
+          name: bitrixUser.NAME || bitrixUser.LAST_NAME || 'Corretor',
+          email: loginEmail 
+        };
+        setUser(foundUser);
+        await fetchDeals();
+        setLoading(false);
+      } else {
+        // Email não encontrado
+        setLoading(false);
+        alert('❌ Email não encontrado no sistema. Entre em contato com o administrador.');
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao validar usuário:', error);
+    setLoading(false);
+    alert('Erro ao conectar com o sistema. Tente novamente.');
+  }
+};
     setUser(foundUser);
     await fetchDeals();
   };
