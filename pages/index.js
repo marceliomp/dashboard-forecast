@@ -86,11 +86,10 @@ const applyFilters = (dealsData) => {
     console.log('isAdmin:', isAdmin);
     console.log('user:', user);
     console.log('user.id:', user?.id);
-    console.log('Condição (!isAdmin && user && user.id !== admin):', !isAdmin && user && user.id !== 'admin');
     
     let filtered = dealsData;
 
-    // CRÍTICO: Filtro de usuário SEMPRE aplicado primeiro
+    // Filtro de usuário
     if (!isAdmin && user && user.id !== 'admin') {
       // Corretor normal: VÊ APENAS SEUS PRÓPRIOS DEALS
       console.log('Filtrando para user ID:', user.id);
@@ -100,9 +99,10 @@ const applyFilters = (dealsData) => {
       });
       console.log('Deals filtrados:', filtered.length);
     } else if (isAdmin && selectedUser !== 'all') {
-      // Admin com filtro específico
+      // Admin com filtro específico de corretor
       filtered = filtered.filter(deal => deal.ASSIGNED_BY_ID === selectedUser);
     }
+    // Se isAdmin e selectedUser === 'all', não filtra por usuário (mostra todos)
 
     // Filtro de data
     const now = new Date();
