@@ -132,10 +132,10 @@ const applyFilters = (dealsData) => {
   };
 
   useEffect(() => {
-    if (allDeals.length > 0) {
+    if (allDeals.length > 0 && user) {
       applyFilters(allDeals);
     }
-  }, [dateFilter, dateType, customStartDate, customEndDate, selectedUser, isAdmin, user]);
+  }, [dateFilter, dateType, customStartDate, customEndDate, selectedUser, isAdmin, user, allDeals]);
 
   const handleLogin = async () => {
     if (!loginEmail) {
