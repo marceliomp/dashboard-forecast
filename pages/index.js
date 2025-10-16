@@ -44,16 +44,31 @@ export default function DashboardForecast() {
     'UC_ZB34M4': { name: 'Cliente não aceito (sem perfil)', probability: 0, order: 11, color: '#ef3000' }
   };
 
-  const getStageInfo = (stageId) => {
-    if (!stageId) return { name: 'Sem Etapa', probability: 0, order: 0, color: '#ccc' };
+const getStageInfo = (stageId) => {
+    // Valor padrão para retornar em qualquer erro
+    const defaultStage = { name: 'Etapa Desconhecida', probability: 30, order: 0, color: '#999' };
     
-    if (stageId.startsWith('C1:')) {
-      if (stageId === 'C1:PREPARATION') return stageMap['C1:PREPARATION'];
-      if (stageId === 'C1:WON') return stageMap['C1:WON'];
+    if (!stageId) {
+      return { name: 'Sem Etapa', probability: 0, order: 0, color: '#ccc' };
     }
     
+    // Tenta processar stages com prefixo C1:
+    if (stageId.startsWith('C1:')) {
+      if (stageId === 'C1:PREPARATION') return stageMap['PREPARATION'] || defaultStage;
+      if (stageId === 'C1:WON') return stageMap['WON'] || defaultStage;
+      // Remove o prefixo e continua
+      const cleanStageId = stageId.replace('C1:', '');
+      return stageMap[cleanStageId] || defaultStage;
+    }
+    
+    // Remove qualquer prefixo C<número>:
     const cleanStageId = stageId.replace(/^C\d+:/, '');
-    return stageMap[cleanStageId] || stageMap[stageId] || { name: stageId, probability: 30, order: 0, color: '#999' };
+    
+    // Tenta encontrar no mapa
+    const found = stageMap[cleanStageId] || stageMap[stageId];
+    
+    // Sempre retorna um objeto válido
+    return found || defaultStage;
   };
 
   const getDaysStale = (deal) => {
