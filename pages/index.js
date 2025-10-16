@@ -223,10 +223,15 @@ const calculateStats = () => {
     const wonDeals = deals.filter(d => d.STAGE_SEMANTIC_ID === 'S').length;
     const lostDeals = deals.filter(d => d.STAGE_SEMANTIC_ID === 'F').length;
     
+    console.log('📊 STATS DEBUG:');
+    console.log('Total deals:', totalDeals);
+    console.log('Lost deals:', lostDeals);
+    console.log('Lost deal IDs:', deals.filter(d => d.STAGE_SEMANTIC_ID === 'F').map(d => d.ID));
+    
     const weightedValue = deals.reduce((sum, deal) => {
       const value = parseFloat(deal.OPPORTUNITY || 0);
       const stageInfo = getStageInfo(deal.STAGE_ID);
-      const probability = stageInfo?.probability ?? 0; // Proteção aqui
+      const probability = stageInfo?.probability ?? 0;
       return sum + (value * probability / 100);
     }, 0);
 
