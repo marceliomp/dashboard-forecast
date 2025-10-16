@@ -201,7 +201,7 @@ const applyFilters = (dealsData) => {
     setSelectedUser('all');
   };
 
-  const calculateStats = () => {
+const calculateStats = () => {
     const activeDeals = deals.filter(d => d.STAGE_SEMANTIC_ID !== 'F' && d.STAGE_SEMANTIC_ID !== 'S');
     const totalDeals = deals.length;
     const totalValue = deals.reduce((sum, deal) => sum + parseFloat(deal.OPPORTUNITY || 0), 0);
@@ -211,7 +211,8 @@ const applyFilters = (dealsData) => {
     const weightedValue = deals.reduce((sum, deal) => {
       const value = parseFloat(deal.OPPORTUNITY || 0);
       const stageInfo = getStageInfo(deal.STAGE_ID);
-      return sum + (value * stageInfo.probability / 100);
+      const probability = stageInfo?.probability ?? 0; // Proteção aqui
+      return sum + (value * probability / 100);
     }, 0);
 
     const conversionRate = totalDeals > 0 ? ((wonDeals / totalDeals) * 100).toFixed(1) : 0;
