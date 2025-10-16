@@ -263,17 +263,19 @@ const calculateStats = () => {
       .sort((a, b) => new Date(b.DATE_MODIFY) - new Date(a.DATE_MODIFY));
   };
 
-  const getStagesByUser = () => {
+const getStagesByUser = () => {
     const userStages = {};
     
     deals.forEach(deal => {
       const userId = deal.ASSIGNED_BY_ID || 'Sem responsável';
       
-      // Se não for admin, só processa deals do próprio usuário
       if (!isAdmin && user && user.id !== 'admin' && userId !== user.id) return;
       
       const userName = users.find(u => u.ID === userId)?.NAME || `Corretor ${userId}`;
       const stageInfo = getStageInfo(deal.STAGE_ID);
+      
+      // Proteção: se stageInfo vier null/undefined, pula esse deal
+      if (!stageInfo || !stageInfo.name) return;
       
       if (!userStages[userId]) {
         userStages[userId] = {
@@ -293,8 +295,8 @@ const calculateStats = () => {
         userStages[userId].stages[stageName] = {
           count: 0,
           value: 0,
-          probability: stageInfo.probability,
-          order: stageInfo.order
+          probability: stageInfo.probability || 0,
+          order: stageInfo.order || 0
         };
       }
       
@@ -302,7 +304,7 @@ const calculateStats = () => {
       userStages[userId].stages[stageName].count += 1;
       userStages[userId].stages[stageName].value += dealValue;
       userStages[userId].total += dealValue;
-      userStages[userId].weighted += dealValue * (stageInfo.probability / 100);
+      userStages[userId].weighted += dealValue * ((stageInfo.probability || 0) / 100);
       userStages[userId].count += 1;
 
       if (deal.STAGE_SEMANTIC_ID === 'S') userStages[userId].won += 1;
