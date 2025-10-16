@@ -336,13 +336,13 @@ const applyFilters = (dealsData) => {
       .map(([name, data]) => ({ name, count: data.count }));
   };
 
-  const stats = calculateStats();
-  const stagesByUser = getStagesByUser();
-  const chartData = getChartData();
-  const priorityActionsByUser = getPriorityActionsByUser();
-  const funnelData = getConversionFunnel();
-  const activeDeals = getActiveDeals();
-  const lostDeals = getLostDeals();
+ const stats = user ? calculateStats() : { totalDeals: 0, totalValue: 0, wonDeals: 0, lostDeals: 0, weightedValue: 0, conversionRate: 0, activeDeals: 0 };
+  const stagesByUser = user ? getStagesByUser() : [];
+  const chartData = user ? getChartData() : [];
+  const priorityActionsByUser = user ? getPriorityActionsByUser() : [];
+  const funnelData = user ? getConversionFunnel() : [];
+  const activeDeals = user ? getActiveDeals() : [];
+  const lostDeals = user ? getLostDeals() : [];
 
   if (!user) {
     return (
