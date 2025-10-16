@@ -67,13 +67,13 @@ export default function DashboardForecast() {
   const fetchDeals = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/bitrix?endpoint=crm.deal.list`);
+      // Busca apenas deals relevantes (não arquivados)
+      const response = await fetch(`/api/bitrix?endpoint=crm.deal.list&filter[CATEGORY_ID]=0&select[]=ID&select[]=TITLE&select[]=STAGE_ID&select[]=STAGE_SEMANTIC_ID&select[]=OPPORTUNITY&select[]=ASSIGNED_BY_ID&select[]=DATE_CREATE&select[]=DATE_MODIFY&select[]=CLOSEDATE&select[]=LAST_ACTIVITY_TIME`);
       const data = await response.json();
       
       if (data.result && data.result.length > 0) {
-        const salesDeals = data.result.filter(deal => deal.CATEGORY_ID === "0");
-        setAllDeals(salesDeals);
-        applyFilters(salesDeals);
+        setAllDeals(data.result);
+        applyFilters(data.result);
       }
     } catch (error) {
       console.error('Erro ao buscar deals:', error);
