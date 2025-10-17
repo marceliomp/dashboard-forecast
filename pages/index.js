@@ -79,16 +79,13 @@ const getStageInfo = (stageId) => {
     return Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
   };
 
-  const fetchDeals = async () => {
-    setLoading(true);
-    try {
-      // Busca apenas deals relevantes (não arquivados)
-      const response = await fetch(`/api/bitrix?endpoint=crm.deal.list&filter[CATEGORY_ID]=0&select[]=ID&select[]=TITLE&select[]=STAGE_ID&select[]=STAGE_SEMANTIC_ID&select[]=OPPORTUNITY&select[]=ASSIGNED_BY_ID&select[]=DATE_CREATE&select[]=DATE_MODIFY&select[]=CLOSEDATE&select[]=LAST_ACTIVITY_TIME`);
+ const response = await fetch(`/api/bitrix?endpoint=crm.deal.list`);
       const data = await response.json();
       
       if (data.result && data.result.length > 0) {
-        setAllDeals(data.result);
-        applyFilters(data.result);
+        const salesDeals = data.result.filter(deal => deal.CATEGORY_ID === "0");
+        setAllDeals(salesDeals);
+        applyFilters(salesDeals);
       }
     } catch (error) {
       console.error('Erro ao buscar deals:', error);
