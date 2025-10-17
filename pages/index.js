@@ -79,6 +79,9 @@ const getStageInfo = (stageId) => {
     return Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
   };
 
+  const fetchDeals = async () => {
+    setLoading(true);
+    try {
  const response = await fetch(`/api/bitrix?endpoint=crm.deal.list`);
       const data = await response.json();
       
