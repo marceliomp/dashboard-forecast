@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Head from 'next/head';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function DashboardForecast() {
@@ -369,6 +370,11 @@ const getStagesByUser = () => {
 
   if (!user) {
     return (
+       <>
+      <Head>
+        <title>Dashboard Forecast - Alvo</title>
+        <link rel="icon" href="/favicon.png" />
+      </Head>
       <div style={{ 
         minHeight: '100vh', 
         background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
@@ -409,7 +415,8 @@ const getStagesByUser = () => {
               boxSizing: 'border-box'
             }}
           />
-          
+         </>
+
           <button onClick={handleLogin} disabled={loading} style={{
             width: '100%',
             padding: '12px',
@@ -433,6 +440,11 @@ const getStagesByUser = () => {
   }
 
   return (
+    <>
+     <Head>
+      <title>Dashboard Forecast - Alvo</title>
+       <link rel="icon" href="/favicon.png" />
+     </Head>
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <header style={{
         background: colors.dark,
