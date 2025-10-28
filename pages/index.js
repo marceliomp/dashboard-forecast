@@ -415,7 +415,6 @@ const getStagesByUser = () => {
               boxSizing: 'border-box'
             }}
           />
-         </>
 
           <button onClick={handleLogin} disabled={loading} style={{
             width: '100%',
