@@ -218,28 +218,44 @@ const applyFilters = (dealsData) => {
   };
 
 const calculateStats = () => {
-    const activeDeals = deals.filter(d => d.STAGE_SEMANTIC_ID !== 'F' && d.STAGE_SEMANTIC_ID !== 'S');
-    const totalDeals = deals.length;
-    const totalValue = deals.reduce((sum, deal) => sum + parseFloat(deal.OPPORTUNITY || 0), 0);
-    const wonDeals = deals.filter(d => d.STAGE_SEMANTIC_ID === 'S').length;
-    const lostDeals = deals.filter(d => d.STAGE_SEMANTIC_ID === 'F').length;
-    
-    console.log('📊 STATS DEBUG:');
-    console.log('Total deals:', totalDeals);
-    console.log('Lost deals:', lostDeals);
-    console.log('Lost deal IDs:', deals.filter(d => d.STAGE_SEMANTIC_ID === 'F').map(d => d.ID));
-    
-    const weightedValue = deals.reduce((sum, deal) => {
-      const value = parseFloat(deal.OPPORTUNITY || 0);
-      const stageInfo = getStageInfo(deal.STAGE_ID);
-      const probability = stageInfo?.probability ?? 0;
-      return sum + (value * probability / 100);
-    }, 0);
+  // negócios ativos (nem fechados, nem perdidos)
+  const activeDeals = deals.filter(d => d.STAGE_SEMANTIC_ID !== 'F' && d.STAGE_SEMANTIC_ID !== 'S');
+  
+  const totalDeals = deals.length;
+  
+  // ✅ Total agora ignora perdidos
+  const totalValue = activeDeals.reduce((sum, deal) => sum + parseFloat(deal.OPPORTUNITY || 0), 0);
 
-    const conversionRate = totalDeals > 0 ? ((wonDeals / totalDeals) * 100).toFixed(1) : 0;
-    
-    return { totalDeals, totalValue, wonDeals, lostDeals, weightedValue, conversionRate, activeDeals: activeDeals.length };
+  const wonDeals = deals.filter(d => d.STAGE_SEMANTIC_ID === 'S').length;
+  const lostDeals = deals.filter(d => d.STAGE_SEMANTIC_ID === 'F').length;
+
+  // 📊 Apenas para debug no console (opcional)
+  console.log('📊 STATS DEBUG:');
+  console.log('Total deals:', totalDeals);
+  console.log('Lost deals:', lostDeals);
+  console.log('Lost deal IDs:', deals.filter(d => d.STAGE_SEMANTIC_ID === 'F').map(d => d.ID));
+
+  // cálculo ponderado mantém todos (ou se quiser, pode usar activeDeals também)
+  const weightedValue = activeDeals.reduce((sum, deal) => {
+    const value = parseFloat(deal.OPPORTUNITY || 0);
+    const stageInfo = getStageInfo(deal.STAGE_ID);
+    const probability = stageInfo?.probability ?? 0;
+    return sum + (value * probability / 100);
+  }, 0);
+
+  const conversionRate = totalDeals > 0 ? ((wonDeals / totalDeals) * 100).toFixed(1) : 0;
+
+  return {
+    totalDeals,
+    totalValue,       // 🚀 agora é o VGV ativo
+    wonDeals,
+    lostDeals,
+    weightedValue,
+    conversionRate,
+    activeDeals: activeDeals.length
   };
+};
+
 
   const getPriorityActionsByUser = () => {
     const byUser = {};
