@@ -368,9 +368,9 @@ const getStagesByUser = () => {
   const activeDeals = user ? getActiveDeals() : [];
   const lostDeals = user ? getLostDeals() : [];
 
-  if (!user) {
-    return (
-       <>
+if (!user) {
+  return (
+     <>
       <Head>
         <title>Dashboard Forecast - Alvo</title>
         <link rel="icon" href="/favicon.png" />
@@ -435,8 +435,10 @@ const getStagesByUser = () => {
           </p>
         </div>
       </div>
-    );
-  }
+    </>
+  );
+}
+
 
   return (
     <>
